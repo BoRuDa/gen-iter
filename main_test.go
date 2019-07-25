@@ -2,28 +2,33 @@ package iter
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"testing"
+	"text/template"
 )
 
-func TestName(t *testing.T) {
+func TestName2(t *testing.T) {
+	tmpl, err := template.New("gen-iter").Parse(iteratorTemplate)
+	t.Log(err)
 
-	iter := NewIter([]int{1, 3, 2}).
-		Reverse().
-		Sort().
-		ApplyForEach(
-			func(p int) int {
-				return p + p
-			},
-			func(p int) int {
-				return p * p
-			},
-		).
-		//Reverse().
-		Reverse()
-
-	i, ok := iter.Next()
-	for ok {
-		fmt.Println(i, ok)
-		i, ok = iter.Next()
+	f, err := os.Create("./test/test_template.go")
+	if err != nil {
+		return
 	}
+	defer f.Close()
+
+	name := "iter"
+	iterType := "int"
+
+	//TODO
+
+	iteratorName := fmt.Sprint(strings.ToUpper(iterType[:1]), iterType[1:], "Iterator")
+
+	err = tmpl.Execute(f, map[string]string{
+		"PkgName":      strings.ToLower(name),
+		"Type":         iterType,
+		"IteratorName": iteratorName,
+	})
+	t.Log(err)
 }
