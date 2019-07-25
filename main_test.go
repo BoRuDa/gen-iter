@@ -6,13 +6,18 @@ import (
 )
 
 func TestName(t *testing.T) {
-	ints := []int{1, 2, 3}
 
-	iter := NewIter(ints).
+	iter := NewIter([]int{1, 3, 2}).
 		Reverse().
-		Map(func(p int) int {
-			return p * p
-		}).
+		Sort().
+		ApplyForEach(
+			func(p int) int {
+				return p + p
+			},
+			func(p int) int {
+				return p * p
+			},
+		).
 		Reverse().
 		Reverse()
 
