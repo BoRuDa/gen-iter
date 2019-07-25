@@ -18,7 +18,7 @@ func TestName(t *testing.T) {
 				return p * p
 			},
 		).
-		Reverse().
+		//Reverse().
 		Reverse()
 
 	i, ok := iter.Next()

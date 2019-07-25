@@ -9,6 +9,7 @@ type Iterator interface {
 	ApplyForEach(fn ...func(p int) int) Iterator
 	Reverse() Iterator
 	Sort() Iterator
+	Slice() []int
 }
 
 type iter struct {
@@ -19,19 +20,18 @@ type iter struct {
 	isReversed bool
 }
 
-func NewIter(pts []int) Iterator {
-	return &iter{items: pts, getIndex: nextIndex}
+func NewIter(items []int) Iterator {
+	return &iter{items: items, getIndex: nextIndex}
 }
 
 // Next returns current element and return `true` on success
 // returns `false` when reaches the end
 func (p *iter) Next() (pt int, ok bool) {
 	if i, hasNext := p.getIndex(p); hasNext {
-		pt = p.items[i]
 		for _, f := range p.decorators {
-			pt = f(pt)
+			p.items[i] = f(p.items[i])
 		}
-		return pt, true
+		return p.items[i], true
 	}
 	return
 }
@@ -66,6 +66,11 @@ func (p *iter) Sort() Iterator {
 		return p.items[i] < p.items[j]
 	})
 	return p
+}
+
+// Slice returns underling slice with all changes
+func (p *iter) Slice() []int {
+	return p.items
 }
 
 func nextIndex(p *iter) (i int, hasNext bool) {
