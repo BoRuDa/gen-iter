@@ -16,19 +16,32 @@ const (
 	defaultDir   = "."
 )
 
+var (
+	ErrShowUsage       = fmt.Errorf("show usage")
+	ErrPkgNameIsNotSet = fmt.Errorf("package name is not set")
+	ErrTypeIsNotSet    = fmt.Errorf("type is not set")
+	ErrUnknownFlag     = fmt.Errorf("unknown flag")
+)
+
 func main() {
 	data, err := fetchDataFromArgs(os.Args[1:])
 	if err != nil {
-		fmt.Println(err)
+		handleErr(err)
 		return
 	}
 
-	err = generateFile(data)
-	fmt.Println(err)
+	if err := generateFile(data); err != nil {
+		handleErr(err)
+		return
+	}
 }
 
 func fetchDataFromArgs(args []string) (map[string]string, error) {
 	data := make(map[string]string)
+
+	if len(args) == 0 {
+		return nil, ErrShowUsage
+	}
 
 	for validateArgs(args) {
 		if err := setData(args[:2], data); err != nil {
@@ -40,12 +53,12 @@ func fetchDataFromArgs(args []string) (map[string]string, error) {
 
 	_, ok := data[PkgName]
 	if !ok {
-		return nil, fmt.Errorf("package name is not set")
+		return nil, ErrPkgNameIsNotSet
 	}
 
 	iterType, ok := data[Type]
 	if !ok {
-		return nil, fmt.Errorf("type is not set")
+		return nil, ErrTypeIsNotSet
 	}
 
 	data[IteratorName] = fmt.Sprint(strings.ToUpper(iterType[:1]), iterType[1:], "Iterator")
@@ -80,7 +93,7 @@ func setData(args []string, data map[string]string) error {
 		return nil
 
 	default:
-		return fmt.Errorf("unknown command")
+		return ErrUnknownFlag
 	}
 }
 
@@ -101,4 +114,11 @@ func generateFile(data map[string]string) error {
 	defer f.Close()
 
 	return tmpl.Execute(f, data)
+}
+
+func handleErr(err error) {
+	fmt.Println(usage)
+	if err != ErrShowUsage {
+		fmt.Println("Error: ", err)
+	}
 }
