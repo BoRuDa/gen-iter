@@ -13,8 +13,7 @@ Implements iterator for specified type with code generation.
 ```bash
     gen-iter -type int -pkg iter 
 ```
-- With go generate
-Add next comment into your file:
+- With go generate. Add next comment into your file:
 ```go
     //go:generate gen-iter -t int -p iter
 ```
