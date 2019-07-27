@@ -1,11 +1,17 @@
 package iter
 
 import (
-	"fmt"
+	"reflect"
 	"testing"
 )
 
+//go:generate gen-iter -t int -p iter
 func TestName(t *testing.T) {
+	var (
+		expectedResult = []int{16, 36, 4}
+		gotResult      = make([]int, 0)
+	)
+
 	iter := NewIter([]int{1, 3, 2}).
 		Reverse().
 		ApplyForEach(
@@ -16,12 +22,16 @@ func TestName(t *testing.T) {
 				return p * p
 			},
 		).
-		//Reverse().
+		Reverse().
 		Reverse()
 
-	i, ok := iter.Next()
+	val, ok := iter.Next()
 	for ok {
-		fmt.Println(i, ok)
-		i, ok = iter.Next()
+		gotResult = append(gotResult, val)
+		val, ok = iter.Next()
+	}
+
+	if !reflect.DeepEqual(expectedResult, gotResult) {
+		t.Fatalf(`expected result: %v, but got: %v`, expectedResult, gotResult)
 	}
 }

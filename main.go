@@ -1,93 +1,104 @@
-package iter
+package main
 
-//
-//import (
-//	"sort"
-//)
-//
-//type Iterator interface {
-//	Next() (int, bool)
-//	ApplyForEach(fn ...func(p int) int) Iterator
-//	Reverse() Iterator
-//	Sort() Iterator
-//	Slice() []int
-//}
-//
-//type iter struct {
-//	index      int
-//	items      []int
-//	modifyFns  []func(p int) int
-//	getIndex   func(p *iter) (i int, hasNext bool)
-//	isReversed bool
-//}
-//
-//func NewIter(items []int) Iterator {
-//	return &iter{items: items, getIndex: nextIndex}
-//}
-//
-//// Next returns current element and return `true` on success
-//// returns `false` when reaches the end
-//func (p *iter) Next() (pt int, ok bool) {
-//	if i, hasNext := p.getIndex(p); hasNext {
-//		for _, f := range p.modifyFns {
-//			p.items[i] = f(p.items[i])
-//		}
-//		return p.items[i], true
-//	}
-//	return
-//}
-//
-//// ApplyForEach applies specified functions to each element;
-//// executes all `fns` in order of their definitions;
-//// calls only on `Next()`
-//func (p *iter) ApplyForEach(fns ...func(p int) int) Iterator {
-//	p.modifyFns = append(p.modifyFns, fns...)
-//	return p
-//}
-//
-//// Reverse changes direction of iterations
-//// 0 -> N | N -> 0
-//func (p *iter) Reverse() Iterator {
-//	if p.isReversed {
-//		p.getIndex = nextIndex
-//		p.index = 0
-//		p.isReversed = false
-//		return p
-//	}
-//
-//	p.getIndex = previousIndex
-//	p.index = len(p.items) - 1
-//	p.isReversed = true
-//	return p
-//}
-//
-//// Sort does sorting in ASC order
-//func (p *iter) Sort() Iterator {
-//	sort.Slice(p.items, func(i, j int) bool {
-//		return p.items[i] < p.items[j]
-//	})
-//	return p
-//}
-//
-//// Slice returns underling slice with all changes
-//func (p *iter) Slice() []int {
-//	return p.items
-//}
-//
-//func nextIndex(p *iter) (i int, hasNext bool) {
-//	if p.index < len(p.items) {
-//		i = p.index
-//		p.index++
-//		hasNext = true
-//	}
-//	return
-//}
-//
-//func previousIndex(p *iter) (i int, hasNext bool) {
-//	if p.index >= 0 {
-//		i = p.index
-//		p.index--
-//		hasNext = true
-//	}
-//	return
-//}
+import (
+	"fmt"
+	"os"
+	"path"
+	"strings"
+	"text/template"
+)
+
+const (
+	PkgName      = "PkgName"
+	Type         = "Type"
+	IteratorName = "IteratorName"
+	Dir          = "dir"
+	defaultDir   = "."
+)
+
+func main() {
+	data, err := fetchDataFromArgs(os.Args[1:])
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = generateFile(data)
+	fmt.Println(err)
+}
+
+func fetchDataFromArgs(args []string) (map[string]string, error) {
+	data := make(map[string]string)
+
+	for validateArgs(args) {
+		if err := setData(args[:2], data); err != nil {
+			return nil, err
+		}
+
+		args = args[2:]
+	}
+
+	_, ok := data[PkgName]
+	if !ok {
+		return nil, fmt.Errorf("package name is not set")
+	}
+
+	iterType, ok := data[Type]
+	if !ok {
+		return nil, fmt.Errorf("type is not set")
+	}
+
+	data[IteratorName] = fmt.Sprint(strings.ToUpper(iterType[:1]), iterType[1:], "Iterator")
+	return data, nil
+}
+
+func validateArgs(args []string) bool {
+	size := len(args)
+
+	if size == 0 {
+		return false
+	}
+	if size%2 != 0 {
+		return false
+	}
+
+	return true
+}
+
+func setData(args []string, data map[string]string) error {
+	switch args[0] {
+	case `-t`, `-type`:
+		data[Type] = args[1]
+		return nil
+
+	case `-d`, `-dir`:
+		data["dir"] = args[1]
+		return nil
+
+	case `-p`, `-pkg`:
+		data[PkgName] = args[1]
+		return nil
+
+	default:
+		return fmt.Errorf("unknown command")
+	}
+}
+
+func generateFile(data map[string]string) error {
+	tmpl, err := template.New("gen-iter").Parse(iteratorTemplate)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := data[Dir]; !ok {
+		data[Dir] = defaultDir
+	}
+
+	f, err := os.Create(path.Join(data[Dir], fmt.Sprintf("%s_gen.go", data[IteratorName])))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return tmpl.Execute(f, data)
+}

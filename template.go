@@ -1,4 +1,4 @@
-package iter
+package main
 
 // TODO: add warning
 const iteratorTemplate = `package {{ .PkgName }}
