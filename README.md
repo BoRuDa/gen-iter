@@ -1,5 +1,5 @@
 # gen-iter
-Implements iterator for specified type with code generation.
+Implements iterator for specified type with code generation. _Zero external dependencies, only standard library_. 
 
 ## Installation
 
